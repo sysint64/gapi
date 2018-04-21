@@ -1,15 +1,15 @@
 {
-	"name": "gapi",
-	"authors": [
-		"Andrey Kabylin"
-	],
+    "name": "gapi",
+    "authors": [
+	"Andrey Kabylin"
+    ],
     "dependencies": {
         "derelict-sfml2": "~>3.0.2",
         "derelict-gl3": "~>1.0.21",
         "derelict-ft": "~>1.1.3",
         "gl3n": "~>1.3.1",
     },
-	"description": "Simple data oriented graphics api for OpenGL and Vulkan.",
-	"copyright": "Copyright © 2018, Andrey",
-	"license": "MIT"
+    "description": "Simple data oriented graphics api for OpenGL and Vulkan.",
+    "copyright": "Copyright © 2018, Andrey",
+    "license": "MIT"
 }
