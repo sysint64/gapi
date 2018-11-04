@@ -8,7 +8,7 @@ struct Texture2D {
     uint width;
     uint height;
     Texture2DParameters params;
-    package const(sfTexture)* sf_texture;
+    private const(sfTexture)* sf_texture;
 }
 
 struct Texture2DParameters {
@@ -18,7 +18,9 @@ struct Texture2DParameters {
     bool magFilter = false;
 }
 
-Texture2D createTexture2DFromFile(in string fileName, in Texture2DParameters params = Texture2DParameters()) {
+Texture2D createTexture2DFromFile(in string fileName,
+                                  in Texture2DParameters params = Texture2DParameters())
+{
     const char* fileNamez = toStringz(fileName);
     const sf_texture = sfTexture_createFromFile(fileNamez, null);
 
@@ -26,6 +28,12 @@ Texture2D createTexture2DFromFile(in string fileName, in Texture2DParameters par
         throw new Error("Can't load image '" ~ fileName ~ "'");
     }
 
+    return createFromSfmlTexture(sf_texture);
+}
+
+package Texture2D createFromSfmlTexture(const(sfTexture)* sf_texture,
+                                        in Texture2DParameters params = Texture2DParameters())
+{
     Texture2D texture;
 
     const size = sfTexture_getSize(sf_texture);
@@ -35,6 +43,10 @@ Texture2D createTexture2DFromFile(in string fileName, in Texture2DParameters par
     texture.sf_texture = sf_texture;
 
     return updateTexture2D(texture, params);
+}
+
+package void updateSfmlTexture(Texture2D* texture, const(sfTexture)* sf_texture) {
+    texture.sf_texture = sf_texture;
 }
 
 void bindTexture2D(in Texture2D texture) {

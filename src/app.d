@@ -16,6 +16,7 @@ import gapi.shader_uniform;
 import gapi.opengl;
 import gapi.transform;
 import gapi.texture;
+import gapi.font;
 
 import gl3n.linalg;
 
@@ -50,6 +51,7 @@ Transform2D spriteTransform;
 mat4 spriteModelMatrix;
 mat4 spriteMVPMatrix;
 Texture2D spriteTexture;
+Font dejavuFont;
 
 ShaderProgram transformShader;
 CameraMatrices cameraMatrices;
@@ -81,6 +83,7 @@ void onCreate() {
     createSprite();
     createShaders();
     createTexture();
+    createFont();
 }
 
 void createSprite() {
@@ -132,12 +135,23 @@ void createTexture() {
     spriteTexture = createTexture2DFromFile(buildPath("res", "test.jpg"), params);
 }
 
+void createFont() {
+    dejavuFont = createFontFromFile(buildPath("res", "DejaVuSans.ttf"));
+
+    const Texture2DParameters params = {
+        minFilter: true,
+        magFilter: true
+    };
+    getFontGlyphsTexture(dejavuFont, 12, params);
+}
+
 void onDestroy() {
     deleteBuffer(sprite.indicesBuffer);
     deleteBuffer(sprite.verticesBuffer);
     deleteBuffer(sprite.texCoordsBuffer);
     deleteShaderProgram(transformShader);
     deleteTexture2D(spriteTexture);
+    deleteFont(dejavuFont);
 }
 
 void onResize(in uint width, in uint height) {
@@ -156,7 +170,7 @@ void onProgress() {
     spriteTransform.rotation += 0.01f;
 
     spriteModelMatrix = create2DModelMatrix(spriteTransform);
-    cameraMatrices = updateOrthoMatrices(cameraTransform);
+    cameraMatrices = createOrthoCameraMatrices(cameraTransform);
 
     spriteMVPMatrix = cameraMatrices.mvpMatrix * spriteModelMatrix;
 }

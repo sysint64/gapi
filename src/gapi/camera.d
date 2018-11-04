@@ -15,7 +15,7 @@ struct OthroCameraTransform {
     float zoom;
 }
 
-CameraMatrices updateOrthoMatrices(in OthroCameraTransform transform) {
+CameraMatrices createOrthoCameraMatrices(in OthroCameraTransform transform) {
     CameraMatrices cameraMatrices;
 
     const vec3 eye = vec3(transform.position, 1.0f);
