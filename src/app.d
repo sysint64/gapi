@@ -12,15 +12,17 @@ import derelict.sfml2.graphics;
 import gapi.geometry;
 import gapi.camera;
 import gapi.shader;
+import gapi.shader_uniform;
 import gapi.opengl;
+import gapi.transform;
 
 import gl3n.linalg;
 
 struct WindowData {
     sfWindow* window;
     sfWindowHandle windowHandle;
-    const int viewportWidth = 1024;
-    const int viewportHeight = 768;
+    int viewportWidth = 1024;
+    int viewportHeight = 768;
 }
 
 struct Geometry {
@@ -35,9 +37,25 @@ struct Geometry {
     VAO vao;
 }
 
+enum VaoAttrLocation {
+    in_Position = 0,
+    in_TextCoords = 1,
+    in_Colors = 2,
+}
+
 WindowData windowData;
 Geometry sprite;
+Transform2D spriteTransform;
+mat4 spriteModelMatrix;
+mat4 spriteMVPMatrix;
+
 ShaderProgram transformShader;
+CameraMatrices cameraMatrices;
+OthroCameraTransform cameraTransform = OthroCameraTransform(
+    vec2(1024, 768),
+    vec2(0, 0),
+    1f
+);
 
 void main() {
     DerelictSFML2System.load();
@@ -89,21 +107,18 @@ void createSprite() {
     sprite.vao = createVAO();
 
     bindVAO(sprite.vao);
-    createVector2fVAO(sprite.verticesBuffer);
-    createVector2fVAO(sprite.texCoordsBuffer);
+    createVector2fVAO(sprite.verticesBuffer, VaoAttrLocation.in_Position);
+    createVector2fVAO(sprite.texCoordsBuffer, VaoAttrLocation.in_TextCoords);
 }
 
 void createShaders() {
     const vertexSource = readText(buildPath("res", "transform_vertex.glsl"));
     const vertexShader = createShader("transform vertex shader", ShaderType.vertex, vertexSource);
 
-    const fragmentSource = readText(buildPath("res", "transform_fragment.glsl"));
+    const fragmentSource = readText(buildPath("res", "color_fragment.glsl"));
     const fragmentShader = createShader("transform fragment shader", ShaderType.fragment, fragmentSource);
 
     transformShader = createShaderProgram("transform program", [vertexShader, fragmentShader]);
-
-    memoizeShaderLocation(transformShader, "MVP");
-    memoizeShaderLocation(transformShader, "texture");
 }
 
 void onDestroy() {
@@ -113,10 +128,32 @@ void onDestroy() {
     deleteShaderProgram(transformShader);
 }
 
+void onResize(in uint width, in uint height) {
+    cameraTransform.viewportSize = vec2(width, height);
+    windowData.viewportWidth = width;
+    windowData.viewportHeight = height;
+    writeln(cameraTransform);
+}
+
 void onProgress() {
+    spriteTransform.position = vec2(200.0f, 200.0f);
+    spriteTransform.scaling = vec2(200.0f, 200.0f);
+    spriteTransform.rotation += 0.01f;
+
+    spriteModelMatrix = create2DModelMatrix(spriteTransform);
+    cameraMatrices = updateOrthoMatrices(cameraTransform);
+
+    spriteMVPMatrix = cameraMatrices.mvpMatrix * spriteModelMatrix;
 }
 
 void onRender() {
+    bindShaderProgram(transformShader);
+    setShaderProgramUniformMatrix(transformShader, "MVP", spriteMVPMatrix);
+    setShaderProgramUniformVec4f(transformShader, "color", vec4(0.6f, 0, 0, 1f));
+
+    bindVAO(sprite.vao);
+    bindIndices(sprite.indicesBuffer);
+    renderIndexedGeometry(cast(uint) sprite.indices.length, GL_TRIANGLE_STRIP);
 }
 
 void mainLoop() {
@@ -129,6 +166,8 @@ void mainLoop() {
         while (sfWindow_pollEvent(windowData.window, &event)) {
             if (event.type == sfEvtClosed) {
                 running = false;
+            } else {
+                handleEvents(event);
             }
         }
 
@@ -174,4 +213,15 @@ void initGL() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClearColor(150.0f/255.0f, 150.0f/255.0f, 150.0f/255.0f, 0);
+}
+
+void handleEvents(in sfEvent event) {
+    switch (event.type) {
+        case sfEvtResized:
+            onResize(event.size.width, event.size.height);
+            break;
+
+        default:
+            break;
+    }
 }

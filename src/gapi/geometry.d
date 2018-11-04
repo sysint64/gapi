@@ -12,12 +12,6 @@ struct Buffer {
 }
 
 struct VAO {
-    enum AttrLocation {
-        in_Position = 0,
-        in_TextCoords = 1,
-        in_Normals = 2,
-    }
-
     GLuint id;
 }
 
@@ -64,12 +58,12 @@ void bindVAO(in VAO vao) {
     glBindVertexArray(vao.id);
 }
 
-void createVector2fVAO(in Buffer buffer) {
-    return createVAOAttributeArray!GL_FLOAT(buffer, VAO.AttrLocation.in_Position, 2);
+void createVector2fVAO(in Buffer buffer, in uint location) {
+    return createVAOAttributeArray!GL_FLOAT(buffer, location, 2);
 }
 
-void createVector3fVAO(in Buffer buffer) {
-    return createVAOAttributeArray!GL_FLOAT(buffer, VAO.AttrLocation.in_Position, 3);
+void createVector3fVAO(in Buffer buffer, in uint location) {
+    return createVAOAttributeArray!GL_FLOAT(buffer, location, 3);
 }
 
 void createVAOAttributeArray(uint T)(in Buffer buffer, in uint index, in uint dimension) {
@@ -85,4 +79,8 @@ void bindIndices(in Buffer indices) {
 Buffer deleteBuffer(Buffer buffer) {
     glDeleteBuffers(1, &buffer.id);
     return buffer;
+}
+
+void renderIndexedGeometry(in uint indicesLength, in GLuint renderMode = GL_TRIANGLES) {
+    glDrawElements(renderMode, indicesLength, GL_UNSIGNED_INT, null);
 }

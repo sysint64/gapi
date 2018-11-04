@@ -2,17 +2,16 @@ module gapi.transform;
 
 import gl3n.linalg;
 
-struct OrthoTransform {
+struct Transform2D {
     vec2 position;
     vec2 scaling;
-    float rotation;
-    mat4 modelMatrix;
+    float rotation = 0.0f;
 }
 
-void update2DMatrices(ref OrthoTransform transform) {
+mat4 create2DModelMatrix(in Transform2D transform) {
     const translateMatrix = mat4.translation(vec3(transform.position, 0.0f));
     const rotateMatrix = mat4.rotation(transform.rotation, 0.0f, 0.0f, 1.0f);
     const scaleMatrix = mat4.scaling(transform.scaling.x, transform.scaling.y, 0.0f);
 
-    transform.modelMatrix = translateMatrix * rotateMatrix * scaleMatrix;
+    return translateMatrix * rotateMatrix * scaleMatrix;
 }

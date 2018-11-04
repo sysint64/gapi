@@ -10,7 +10,6 @@ import gapi.opengl;
 struct ShaderProgram {
     GLuint id;
     Shader[] shaders;
-    GLuint[string] locations;
     string name;
 }
 
@@ -72,22 +71,20 @@ void unbindShaderProgram() {
     glUseProgram(0);
 }
 
-void memoizeShaderLocation(ref ShaderProgram program, in string location) {
-    if (location !in program.locations) {
-        const name = toStringz(location);
-        const loc = glGetUniformLocation(program.id, name);
+GLuint getShaderLocation(in ShaderProgram program, in string location) {
+    const name = toStringz(location);
+    const loc = glGetUniformLocation(program.id, name);
 
-        if (loc == -1) {
-            const details = format(
-                "Failed to get uniform location. name '%s', location: %s",
-                program.name, location
-            );
+    if (loc == -1) {
+        const details = format(
+            "Failed to get uniform location. name '%s', location: %s",
+            program.name, location
+        );
 
-            throw new ShaderError(details);
-        }
-
-        program.locations[location] = glGetUniformLocation(program.id, name);
+        throw new ShaderError(details);
     }
+
+    return loc;
 }
 
 void deleteShaderProgram(in ShaderProgram program) {
