@@ -1,5 +1,7 @@
 import std.stdio;
 import std.container;
+import std.file;
+import std.path;
 
 import derelict.opengl.gl;
 
@@ -8,6 +10,8 @@ import derelict.sfml2.window;
 import derelict.sfml2.graphics;
 
 import gapi.geometry;
+import gapi.camera;
+import gapi.shader;
 import gapi.opengl;
 
 import gl3n.linalg;
@@ -33,6 +37,7 @@ struct Geometry {
 
 WindowData windowData;
 Geometry sprite;
+ShaderProgram transformShader;
 
 void main() {
     DerelictSFML2System.load();
@@ -53,6 +58,11 @@ void run() {
 }
 
 void onCreate() {
+    createSprite();
+    createShaders();
+}
+
+void createSprite() {
     sprite.indices.insert([0, 3, 1, 2]);
     sprite.vertices.insert(
         [
@@ -83,10 +93,24 @@ void onCreate() {
     createVector2fVAO(sprite.texCoordsBuffer);
 }
 
+void createShaders() {
+    const vertexSource = readText(buildPath("res", "transform_vertex.glsl"));
+    const vertexShader = createShader("transform vertex shader", ShaderType.vertex, vertexSource);
+
+    const fragmentSource = readText(buildPath("res", "transform_fragment.glsl"));
+    const fragmentShader = createShader("transform fragment shader", ShaderType.fragment, fragmentSource);
+
+    transformShader = createShaderProgram("transform program", [vertexShader, fragmentShader]);
+
+    memoizeShaderLocation(transformShader, "MVP");
+    memoizeShaderLocation(transformShader, "texture");
+}
+
 void onDestroy() {
     deleteBuffer(sprite.indicesBuffer);
     deleteBuffer(sprite.verticesBuffer);
     deleteBuffer(sprite.texCoordsBuffer);
+    deleteShaderProgram(transformShader);
 }
 
 void onProgress() {
@@ -126,8 +150,8 @@ void initSFML() {
         depthBits = 24;
         stencilBits = 8;
         antialiasingLevel = 0;
-        majorVersion = 2;
-        minorVersion = 1;
+        majorVersion = 4;
+        minorVersion = 3;
     }
 
     sfVideoMode videoMode = {windowData.viewportWidth, windowData.viewportHeight, 24};

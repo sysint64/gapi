@@ -64,11 +64,11 @@ void bindVAO(in VAO vao) {
     glBindVertexArray(vao.id);
 }
 
-void createVertices2fVAO(in Buffer buffer) {
+void createVector2fVAO(in Buffer buffer) {
     return createVAOAttributeArray!GL_FLOAT(buffer, VAO.AttrLocation.in_Position, 2);
 }
 
-void createVertices3fVAO(in Buffer buffer) {
+void createVector3fVAO(in Buffer buffer) {
     return createVAOAttributeArray!GL_FLOAT(buffer, VAO.AttrLocation.in_Position, 3);
 }
 

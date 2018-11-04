@@ -2,36 +2,43 @@ module gapi.camera;
 
 import gl3n.linalg;
 
-struct Camera {
-    vec2 viewportSize;
+struct CameraMatrices {
     mat4 viewMatrix;
     mat4 projectionMatrix;
     mat4 modelMatrix;
-    mat4 MVPMatrix;
+    mat4 mvpMatrix;
 }
 
 struct OthroCameraTransform {
+    vec2 viewportSize;
     vec2 position;
     float zoom;
 }
 
-void updateOrthoMatrices(ref Camera camera, in OthroCameraTransform transform) {
+CameraMatrices updateOrthoMatrices(in OthroCameraTransform transform) {
+    CameraMatrices cameraMatrices;
+
     const vec3 eye = vec3(transform.position, 1.0f);
     const vec3 target = vec3(transform.position, 0.0f);
     const vec3 up = vec3(0.0f, 1.0f, 0.0f);
 
-    camera.viewMatrix = mat4.look_at(eye, target, up);
-    camera.projectionMatrix = mat4.orthographic(
-        0.0f, camera.viewportSize.x,
-        0.0f, camera.viewportSize.y,
+    cameraMatrices.viewMatrix = mat4.look_at(eye, target, up);
+    cameraMatrices.projectionMatrix = mat4.orthographic(
+        0.0f, transform.viewportSize.x,
+        0.0f, transform.viewportSize.y,
         0.0f, 10.0f
     );
 
     if (transform.zoom > 1.0f) {
-        camera.modelMatrix = mat4.scaling(transform.zoom, transform.zoom, 1.0f);
+        cameraMatrices.modelMatrix = mat4.scaling(transform.zoom, transform.zoom, 1.0f);
     } else {
-        camera.modelMatrix = mat4.identity;
+        cameraMatrices.modelMatrix = mat4.identity;
     }
 
-    camera.MVPMatrix = camera.projectionMatrix * camera.modelMatrix * camera.viewMatrix;
+    cameraMatrices.mvpMatrix =
+        cameraMatrices.projectionMatrix *
+        cameraMatrices.modelMatrix *
+        cameraMatrices.viewMatrix;
+
+    return cameraMatrices;
 }
