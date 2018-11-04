@@ -3,23 +3,11 @@ module gapi.geometry;
 import std.container;
 import std.conv;
 
-import derelict.opengl3.gl;
+import gapi.opengl;
 import gl3n.linalg;
 
-struct Indices {
+struct Buffer {
     GLuint id;
-    Array!GLuint data;
-}
-
-struct Vertices {
-    GLuint id;
-    Array!vec3 data;
-    bool staticData = true;
-}
-
-struct TexCoords {
-    GLuint id;
-    Array!vec2 data;
     bool staticData = true;
 }
 
@@ -33,121 +21,68 @@ struct VAO {
     GLuint id;
 }
 
-struct Geometry {
-    Indices indices;
-    Vertices vertices;
-    TexCoords texCoords;
-    private VAO vao;
+Buffer createIndicesBuffer(in Array!uint indicesData, in bool staticData = true) {
+    return createBuffer!GLuint(&indicesData[0], indicesData.length, 1, staticData);
 }
 
-void createIndices(ref Indices indices) {
-    glGenBuffers(1, &indices.id);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices.id);
-
-    const int indicesSize = to!int(GLuint.sizeof*indices.data.length);
-    glBufferData (GL_ELEMENT_ARRAY_BUFFER, indicesSize, &indices.data[0], GL_STATIC_DRAW);
+Buffer createVector2fBuffer(in Array!vec2 verticesData, in bool staticData = true) {
+    return createBuffer!GLfloat(&verticesData[0], verticesData.length, 2, staticData);
 }
 
-void createVertices(ref Vertices vertices) {
+Buffer createVector3fBuffer(in Array!vec3 verticesData, in bool staticData = true) {
+    return createBuffer!GLfloat(&verticesData[0], verticesData.length, 3, staticData);
+}
+
+Buffer createBuffer(T)(in void* verticesData, in size_t dataLength, in uint dimension,
+                       in bool staticData = true)
+{
+    Buffer vertices;
+    vertices.staticData = staticData;
+
     glGenBuffers(1, &vertices.id);
     glBindBuffer(GL_ARRAY_BUFFER, vertices.id);
 
-    const int dataSize = to!int(GLfloat.sizeof*3*vertices.data.length);
+    const int dataSize = to!int(T.sizeof*dimension*dataLength);
 
     if (vertices.staticData) {
-        glBufferData(GL_ARRAY_BUFFER, dataSize, &vertices.data[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, dataSize, verticesData, GL_STATIC_DRAW);
     } else {
         glBufferData(GL_ARRAY_BUFFER, dataSize, null, GL_STREAM_DRAW);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, &vertices.data[0]);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, verticesData);
     }
+
+    return vertices;
 }
 
-void createTexCoords(ref TexCoords texCoords) {
-    glGenBuffers(1, &texCoords.id);
-    glBindBuffer(GL_ARRAY_BUFFER, texCoords.id);
-
-    const int dataSize = to!int(GLfloat.sizeof*2*texCoords.data.length);
-
-    if (texCoords.staticData) {
-        glBufferData(GL_ARRAY_BUFFER, dataSize, &texCoords.data[0], GL_STATIC_DRAW);
-    } else {
-        glBufferData(GL_ARRAY_BUFFER, dataSize, null, GL_STREAM_DRAW);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, &texCoords.data[0]);
-    }
-}
-
-void createVAO(ref VAO vao) {
+VAO createVAO() {
+    VAO vao;
     glGenVertexArrays(1, &vao.id);
+    return vao;
 }
 
-void bindVAO(ref VAO vao) {
+void bindVAO(in VAO vao) {
     glBindVertexArray(vao.id);
 }
 
-void createVerticesVAO(ref Vertices vertices) {
-    glBindBuffer(GL_ARRAY_BUFFER, vertices.id);
-    glEnableVertexAttribArray(VAO.AttrLocation.in_Position);
-    glVertexAttribPointer(VAO.AttrLocation.in_Position, 3, GL_FLOAT, GL_FALSE, 0, null);
+void createVertices2fVAO(in Buffer buffer) {
+    return createVAOAttributeArray!GL_FLOAT(buffer, VAO.AttrLocation.in_Position, 2);
 }
 
-void createTexCoordsVAO(ref TexCoords texCoords) {
-    glBindBuffer(GL_ARRAY_BUFFER, texCoords.id);
-    glEnableVertexAttribArray(VAO.AttrLocation.in_TextCoords);
-    glVertexAttribPointer(VAO.AttrLocation.in_TextCoords, 2, GL_FLOAT, GL_FALSE, 0, null);
+void createVertices3fVAO(in Buffer buffer) {
+    return createVAOAttributeArray!GL_FLOAT(buffer, VAO.AttrLocation.in_Position, 3);
 }
 
-void bindVertices(ref Vertices vertices) {
-    const dataSize = to!int(GLfloat.sizeof*2*vertices.data.length);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, dataSize, null);
-
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glBindBuffer(GL_ARRAY_BUFFER, vertices.id);
-    glVertexPointer(2, GL_FLOAT, 0, null);
+void createVAOAttributeArray(uint T)(in Buffer buffer, in uint index, in uint dimension) {
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.id);
+    glEnableVertexAttribArray(index);
+    glVertexAttribPointer(index, dimension, T, GL_FALSE, 0, null);
 }
 
-void bindTexCoords(ref TexCoords texCoords) {
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glBindBuffer(GL_ARRAY_BUFFER, texCoords.id);
-    glTexCoordPointer(2, GL_FLOAT, 0, null);
-}
-
-void bindIndices(ref Indices indices) {
+void bindIndices(in Buffer indices) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices.id);
 }
 
-void deleteIndices(ref Indices indices) {
-    glDeleteBuffers(1, &indices.id);
-}
-
-void deleteVertices(ref Vertices vertices) {
-    glDeleteBuffers(1, &vertices.id);
-}
-
-void deleteTexCoords(ref TexCoords texCoords) {
-    glDeleteBuffers(1, &texCoords.id);
-}
-
-void deleteVAO(ref VAO vao) {
-    glDeleteBuffers(1, &vao.id);
-}
-
-void createGeometry(ref Geometry geometry) {
-    with (geometry) {
-        createIndices(indices);
-        createVertices(vertices);
-        createTexCoords(texCoords);
-        createVAO(vao);
-        bindVAO(vao);
-        createVerticesVAO(vertices);
-        createTexCoordsVAO(texCoords);
-    }
-}
-
-void deleteGeometry(ref Geometry geometry) {
-    with (geometry) {
-        deleteIndices(indices);
-        deleteVertices(vertices);
-        deleteTexCoords(texCoords);
-        deleteVAO(vao);
-    }
+Buffer deleteBuffer(Buffer buffer) {
+    glDeleteBuffers(1, &buffer.id);
+    return buffer;
 }
