@@ -3,6 +3,7 @@ module gapi.shader_uniform;
 import gapi.shader;
 import gapi.opengl;
 import gapi.vec;
+import gapi.texture;
 
 void setShaderProgramUniformFloat(in ShaderProgram program, in string location, in float val) {
     const loc = getShaderLocation(program, location);
@@ -19,15 +20,15 @@ void setShaderProgramUniformUInt(in ShaderProgram program, in string location, i
     glUniform1ui(loc, val);
 }
 
-// void setShaderProgramUniformTexture(in ShaderProgram program, in string location, Texture texture) {
-//     glActiveTexture(GL_TEXTURE0 + nextTextureID);
-//     texture.bind();
+void setShaderProgramUniformTexture(in ShaderProgram program, in string location,
+                                    in Texture2D texture, in uint index)
+{
+    glActiveTexture(GL_TEXTURE0 + index);
+    bindTexture2D(texture);
 
-//     const loc = getShaderLocation(program, location);
-//     glUniform1i(loc, nextTextureID);
-
-//     ++nextTextureID;
-// }
+    const loc = getShaderLocation(program, location);
+    glUniform1i(loc, index);
+}
 
 // Float Vector ------------------------------------------------------------------------------------
 

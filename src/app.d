@@ -15,6 +15,7 @@ import gapi.shader;
 import gapi.shader_uniform;
 import gapi.opengl;
 import gapi.transform;
+import gapi.texture;
 
 import gl3n.linalg;
 
@@ -48,6 +49,7 @@ Geometry sprite;
 Transform2D spriteTransform;
 mat4 spriteModelMatrix;
 mat4 spriteMVPMatrix;
+Texture2D spriteTexture;
 
 ShaderProgram transformShader;
 CameraMatrices cameraMatrices;
@@ -78,6 +80,7 @@ void run() {
 void onCreate() {
     createSprite();
     createShaders();
+    createTexture();
 }
 
 void createSprite() {
@@ -115,10 +118,18 @@ void createShaders() {
     const vertexSource = readText(buildPath("res", "transform_vertex.glsl"));
     const vertexShader = createShader("transform vertex shader", ShaderType.vertex, vertexSource);
 
-    const fragmentSource = readText(buildPath("res", "color_fragment.glsl"));
+    const fragmentSource = readText(buildPath("res", "texture_fragment.glsl"));
     const fragmentShader = createShader("transform fragment shader", ShaderType.fragment, fragmentSource);
 
     transformShader = createShaderProgram("transform program", [vertexShader, fragmentShader]);
+}
+
+void createTexture() {
+    const Texture2DParameters params = {
+        minFilter: true,
+        magFilter: true
+    };
+    spriteTexture = createTexture2DFromFile(buildPath("res", "test.jpg"), params);
 }
 
 void onDestroy() {
@@ -126,6 +137,7 @@ void onDestroy() {
     deleteBuffer(sprite.verticesBuffer);
     deleteBuffer(sprite.texCoordsBuffer);
     deleteShaderProgram(transformShader);
+    deleteTexture2D(spriteTexture);
 }
 
 void onResize(in uint width, in uint height) {
@@ -136,8 +148,11 @@ void onResize(in uint width, in uint height) {
 }
 
 void onProgress() {
-    spriteTransform.position = vec2(200.0f, 200.0f);
-    spriteTransform.scaling = vec2(200.0f, 200.0f);
+    spriteTransform.position = vec2(
+        cameraTransform.viewportSize.x / 2,
+        cameraTransform.viewportSize.y / 2
+    );
+    spriteTransform.scaling = vec2(430.0f, 600.0f);
     spriteTransform.rotation += 0.01f;
 
     spriteModelMatrix = create2DModelMatrix(spriteTransform);
@@ -149,7 +164,7 @@ void onProgress() {
 void onRender() {
     bindShaderProgram(transformShader);
     setShaderProgramUniformMatrix(transformShader, "MVP", spriteMVPMatrix);
-    setShaderProgramUniformVec4f(transformShader, "color", vec4(0.6f, 0, 0, 1f));
+    setShaderProgramUniformTexture(transformShader, "texture", spriteTexture, 0);
 
     bindVAO(sprite.vao);
     bindIndices(sprite.indicesBuffer);
