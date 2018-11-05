@@ -52,7 +52,7 @@ Text fpsText;
 UpdateTextResult updateFpsTextResult;
 
 ShaderProgram transformShader;
-ShaderProgram colorizeShader;
+ShaderProgram textShader;
 
 CameraMatrices cameraMatrices;
 OthroCameraTransform cameraTransform = OthroCameraTransform(
@@ -119,11 +119,11 @@ void createShaders() {
     const fragmentSource = readText(buildPath("res", "texture_fragment.glsl"));
     const fragmentShader = createShader("transform fragment shader", ShaderType.fragment, fragmentSource);
 
-    const fragmentColorSource = readText(buildPath("res", "color_fragment.glsl"));
+    const fragmentColorSource = readText(buildPath("res", "colorize_texatlas_fragment.glsl"));
     const fragmentColorShader = createShader("color fragment shader", ShaderType.fragment, fragmentColorSource);
 
     transformShader = createShaderProgram("transform program", [vertexShader, fragmentShader]);
-    colorizeShader = createShaderProgram("color program", [vertexShader, fragmentColorShader]);
+    textShader = createShaderProgram("text program", [vertexShader, fragmentColorShader]);
 }
 
 void createTexture() {
@@ -147,7 +147,7 @@ void onDestroy() {
     deleteBuffer(sprite.verticesBuffer);
     deleteBuffer(sprite.texCoordsBuffer);
     deleteShaderProgram(transformShader);
-    deleteShaderProgram(colorizeShader);
+    deleteShaderProgram(textShader);
     deleteTexture2D(spriteTexture);
     deleteFont(dejavuFont);
     deleteText(fpsText);
@@ -199,15 +199,15 @@ void renderSprite() {
 }
 
 void renderFpsText() {
-    bindShaderProgram(colorizeShader);
-    setShaderProgramUniformVec4f(colorizeShader, "color", vec4(0, 0, 0, 1.0f));
+    bindShaderProgram(textShader);
+    setShaderProgramUniformVec4f(textShader, "color", vec4(0, 0, 0, 1.0f));
 
     const RenderTextInput input = {
-        shader: colorizeShader,
+        shader: textShader,
         glyphGeometry: glyphGeometry,
         updateResult: updateFpsTextResult
     };
-    renderText(fpsText, input);
+    renderText(input);
 }
 
 void mainLoop() {

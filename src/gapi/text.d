@@ -58,12 +58,11 @@ struct UpdateTextResult {
 }
 
 struct Glyph {
-    vec4 texCoord;
+    Texture2DCoords texCoords;
     mat4 mvpMatrix;
 }
 
 UpdateTextResult updateText(in Text text, in UpdateTextInput input) {
-
     auto sf_text = cast(sfText*) text.sf_text;
     auto sf_font = cast(sfFont*) input.font.sf_font;
 
@@ -79,6 +78,7 @@ UpdateTextResult updateText(in Text text, in UpdateTextInput input) {
     uint prevChar = 0;
 
     Array!Glyph glyphs;
+    const texture = getFontGlyphsTexture(input.font, input.textSize);
 
     for (size_t i = 0; i < input.text.length; ++i) {
         const curChar = input.text[i];
@@ -97,8 +97,14 @@ UpdateTextResult updateText(in Text text, in UpdateTextInput input) {
         const mvpMatrix = input.cameraMvpMatrix * create2DModelMatrix(glyphTransform);
         glyphPosition.x += sf_glyph.advance;
 
+        Texture2DCoords glyphTexCoords;
+
+        glyphTexCoords.offset = vec2(sf_glyph.textureRect.left, sf_glyph.textureRect.top);
+        glyphTexCoords.size = vec2(sf_glyph.textureRect.width, sf_glyph.textureRect.height);
+
         const Glyph glyph = {
-            mvpMatrix: mvpMatrix
+            mvpMatrix: mvpMatrix,
+            texCoords: normilizeTexture2DCoords(glyphTexCoords, texture)
         };
 
         glyphs.insert(glyph);
@@ -106,7 +112,7 @@ UpdateTextResult updateText(in Text text, in UpdateTextInput input) {
 
     return UpdateTextResult(
         glyphs,
-        getFontGlyphsTexture(input.font, input.textSize)
+        texture
     );
 }
 
@@ -116,14 +122,19 @@ struct RenderTextInput {
     UpdateTextResult updateResult;
 }
 
-void renderText(in Text text, in RenderTextInput input) {
+void renderText(in RenderTextInput input) {
     bindVAO(input.glyphGeometry.vao);
     bindIndices(input.glyphGeometry.indicesBuffer);
 
-    // setShaderProgramUniformTexture(input.shader, "texture", input.updateResult.texture, 0);
+    setShaderProgramUniformTexture(input.shader, "texture", input.updateResult.texture, 0);
 
     for (size_t i = 0; i < input.updateResult.glyphs.length; ++i) {
-        setShaderProgramUniformMatrix(input.shader, "MVP", input.updateResult.glyphs[i].mvpMatrix);
+        const glyph = input.updateResult.glyphs[i];
+
+        setShaderProgramUniformMatrix(input.shader, "MVP", glyph.mvpMatrix);
+        setShaderProgramUniformVec2f(input.shader, "texOffset", glyph.texCoords.offset);
+        setShaderProgramUniformVec2f(input.shader, "texSize", glyph.texCoords.size);
+
         renderIndexedGeometry(cast(uint) quadIndices.length, GL_TRIANGLE_STRIP);
     }
 }

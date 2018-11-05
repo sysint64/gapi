@@ -4,6 +4,7 @@ module gapi.texture;
 import std.string;
 import derelict.sfml2.graphics;
 import gapi.opengl;
+import gapi.vec;
 
 struct Texture2D {
     uint width;
@@ -17,6 +18,19 @@ struct Texture2DParameters {
     bool wrapT = false;
     bool minFilter = false;
     bool magFilter = false;
+}
+
+struct Texture2DCoords {
+    vec2 offset;
+    vec2 size;
+}
+
+Texture2DCoords normilizeTexture2DCoords(in Texture2DCoords coords, in Texture2D texture) {
+    const Texture2DCoords normilizedCoords = {
+        offset: vec2(coords.offset.x / texture.width, coords.offset.y / texture.height),
+        size: vec2(coords.size.x / texture.width, coords.size.y / texture.height)
+    };
+    return normilizedCoords;
 }
 
 Texture2D createTexture2DFromFile(in string fileName,
