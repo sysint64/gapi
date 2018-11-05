@@ -1,4 +1,3 @@
-
 module gapi.texture;
 
 import std.string;

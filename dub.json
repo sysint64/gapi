@@ -1,5 +1,6 @@
 {
     "name": "gapi",
+    "targetType": "library",
     "authors": [
 	"Andrey Kabylin"
     ],
@@ -12,7 +13,7 @@
         "derelict-gl3": "~>2.0.0-beta.7",
         "gl3n": "~>1.3.1"
     },
-    "description": "Simple data oriented graphics api for OpenGL and Vulkan.",
+    "description": "Simple data oriented graphics api for OpenGL.",
     "copyright": "Copyright © 2018, Andrey",
     "license": "MIT"
 }
