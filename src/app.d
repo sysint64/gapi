@@ -49,6 +49,7 @@ mat4 spriteMVPMatrix;
 Texture2D spriteTexture;
 Font dejavuFont;
 Text fpsText;
+UpdateTextResult updateFpsTextResult;
 
 ShaderProgram transformShader;
 ShaderProgram colorizeShader;
@@ -171,6 +172,15 @@ void onProgress() {
     cameraMatrices = createOrthoCameraMatrices(cameraTransform);
 
     spriteMVPMatrix = cameraMatrices.mvpMatrix * spriteModelMatrix;
+
+    const UpdateTextInput fpsTextInput = {
+        textSize: 32,
+        font: dejavuFont,
+        text: "Hello world!",
+        position: glyphTransform.position,
+        cameraMvpMatrix: cameraMatrices.mvpMatrix
+    };
+    updateFpsTextResult = updateText(fpsText, fpsTextInput);
 }
 
 void onRender() {
@@ -192,12 +202,12 @@ void renderFpsText() {
     bindShaderProgram(colorizeShader);
     setShaderProgramUniformVec4f(colorizeShader, "color", vec4(0, 0, 0, 1.0f));
 
-    const TextParams textParams = {
-        textSize: 32,
-        font: dejavuFont,
-        text: "Hello world!"
+    const RenderTextInput input = {
+        shader: colorizeShader,
+        glyphGeometry: glyphGeometry,
+        updateResult: updateFpsTextResult
     };
-    renderText(fpsText, textParams, colorizeShader, glyphGeometry, glyphTransform, cameraMatrices.mvpMatrix);
+    renderText(fpsText, input);
 }
 
 void mainLoop() {

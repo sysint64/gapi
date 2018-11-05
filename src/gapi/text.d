@@ -2,6 +2,7 @@ module gapi.text;
 
 import std.conv;
 import std.string;
+import std.container.array;
 
 import derelict.sfml2.graphics;
 
@@ -13,6 +14,7 @@ import gapi.vec;
 import gapi.shader;
 import gapi.shader_uniform;
 import gapi.transform;
+import gapi.texture;
 
 struct TextParams {
     uint textSize;
@@ -42,51 +44,87 @@ void deleteText(in Text text) {
     sfText_destroy(cast(sfText*) text.sf_text);
 }
 
-void renderText(in Text text, in TextParams textParams, in ShaderProgram shader,
-                in GlyphGeometry glyphGeometry, in Transform2D textTransform,
-                in mat4 cameraMvpMatrix)
-{
-    bindVAO(glyphGeometry.vao);
-    bindIndices(glyphGeometry.indicesBuffer);
+struct UpdateTextInput {
+    uint textSize;
+    Font font;
+    dstring text;
+    vec2 position;
+    mat4 cameraMvpMatrix;
+}
 
-    const glyphsTexture = getFontGlyphsTexture(textParams.font, textParams.textSize);
-    // setShaderProgramUniformTexture(shader, "texture", glyphsTexture, 0);
+struct UpdateTextResult {
+    Array!Glyph glyphs;
+    Texture2D texture;
+}
+
+struct Glyph {
+    vec4 texCoord;
+    mat4 mvpMatrix;
+}
+
+UpdateTextResult updateText(in Text text, in UpdateTextInput input) {
 
     auto sf_text = cast(sfText*) text.sf_text;
-    auto sf_font = cast(sfFont*) textParams.font.sf_font;
+    auto sf_font = cast(sfFont*) input.font.sf_font;
 
-    sfText_setFont(sf_text, textParams.font.sf_font);
-    sfText_setCharacterSize(sf_text, textParams.textSize);
+    sfText_setFont(sf_text, input.font.sf_font);
+    sfText_setCharacterSize(sf_text, input.textSize);
 
-    string text_s = to!string(textParams.text);
+    string text_s = to!string(input.text);
     const char* text_z = toStringz(text_s);
 
     sfText_setString(sf_text, text_z);
 
-    vec2 glyphPosition = textTransform.position;
+    vec2 glyphPosition = input.position;
     uint prevChar = 0;
 
-    for (size_t i = 0; i < textParams.text.length; ++i) {
-        const curChar = textParams.text[i];
-        const glyph = sfFont_getGlyph(sf_font, curChar, textParams.textSize, 0, 0);
-        const offset = getCharOffset(sf_font, textParams.textSize, prevChar, curChar, glyph);
+    Array!Glyph glyphs;
+
+    for (size_t i = 0; i < input.text.length; ++i) {
+        const curChar = input.text[i];
+        const sf_glyph = sfFont_getGlyph(sf_font, curChar, input.textSize, 0, 0);
+        const offset = getCharOffset(sf_font, input.textSize, prevChar, curChar, sf_glyph);
 
         glyphPosition.x += offset.x;
-        glyphPosition.y = textTransform.position.y + offset.y;
+        glyphPosition.y = input.position.y + offset.y;
 
         prevChar = curChar;
 
-        // Rendering
         const Transform2D glyphTransform = {
             position: glyphPosition,
-            scaling: vec2(glyph.bounds.width, glyph.bounds.height)
+            scaling: vec2(sf_glyph.bounds.width, sf_glyph.bounds.height)
         };
-        const mvpMatrix = cameraMvpMatrix * create2DModelMatrix(glyphTransform);
-        setShaderProgramUniformMatrix(shader, "MVP", mvpMatrix);
+        const mvpMatrix = input.cameraMvpMatrix * create2DModelMatrix(glyphTransform);
+        glyphPosition.x += sf_glyph.advance;
 
+        const Glyph glyph = {
+            mvpMatrix: mvpMatrix
+        };
+
+        glyphs.insert(glyph);
+    }
+
+    return UpdateTextResult(
+        glyphs,
+        getFontGlyphsTexture(input.font, input.textSize)
+    );
+}
+
+struct RenderTextInput {
+    ShaderProgram shader;
+    GlyphGeometry glyphGeometry;
+    UpdateTextResult updateResult;
+}
+
+void renderText(in Text text, in RenderTextInput input) {
+    bindVAO(input.glyphGeometry.vao);
+    bindIndices(input.glyphGeometry.indicesBuffer);
+
+    // setShaderProgramUniformTexture(input.shader, "texture", input.updateResult.texture, 0);
+
+    for (size_t i = 0; i < input.updateResult.glyphs.length; ++i) {
+        setShaderProgramUniformMatrix(input.shader, "MVP", input.updateResult.glyphs[i].mvpMatrix);
         renderIndexedGeometry(cast(uint) quadIndices.length, GL_TRIANGLE_STRIP);
-
-        glyphPosition.x += glyph.advance;
     }
 }
 
