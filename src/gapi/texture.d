@@ -1,3 +1,4 @@
+
 module gapi.texture;
 
 import std.string;
@@ -28,12 +29,16 @@ Texture2D createTexture2DFromFile(in string fileName,
         throw new Error("Can't load image '" ~ fileName ~ "'");
     }
 
-    return createFromSfmlTexture(sf_texture);
+    const texture = createFromSfmlTexture(sf_texture);
+    return updateTexture2D(texture, params);
 }
 
-package Texture2D createFromSfmlTexture(const(sfTexture)* sf_texture,
-                                        in Texture2DParameters params = Texture2DParameters())
-{
+package Texture2D createFromSfmlTexture(const(sfTexture)* sf_texture, in Texture2DParameters params) {
+    const texture = createFromSfmlTexture(sf_texture);
+    return updateTexture2D(texture, params);
+}
+
+package Texture2D createFromSfmlTexture(const(sfTexture)* sf_texture) {
     Texture2D texture;
 
     const size = sfTexture_getSize(sf_texture);
@@ -42,7 +47,7 @@ package Texture2D createFromSfmlTexture(const(sfTexture)* sf_texture,
     texture.height = size.y;
     texture.sf_texture = sf_texture;
 
-    return updateTexture2D(texture, params);
+    return texture;
 }
 
 package void updateSfmlTexture(Texture2D* texture, const(sfTexture)* sf_texture) {

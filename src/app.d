@@ -10,6 +10,7 @@ import derelict.sfml2.window;
 import derelict.sfml2.graphics;
 
 import gapi.geometry;
+import gapi.geometry_quad;
 import gapi.camera;
 import gapi.shader;
 import gapi.shader_uniform;
@@ -17,6 +18,7 @@ import gapi.opengl;
 import gapi.transform;
 import gapi.texture;
 import gapi.font;
+import gapi.text;
 
 import gl3n.linalg;
 
@@ -28,10 +30,6 @@ struct WindowData {
 }
 
 struct Geometry {
-    Array!uint indices;
-    Array!vec2 vertices;
-    Array!vec2 texCoords;
-
     Buffer indicesBuffer;
     Buffer verticesBuffer;
     Buffer texCoordsBuffer;
@@ -39,21 +37,22 @@ struct Geometry {
     VAO vao;
 }
 
-enum VaoAttrLocation {
-    in_Position = 0,
-    in_TextCoords = 1,
-    in_Colors = 2,
-}
-
 WindowData windowData;
 Geometry sprite;
+GlyphGeometry glyphGeometry;
 Transform2D spriteTransform;
+Transform2D glyphTransform = {
+    position: vec2(32.0f, 32.0f)
+};
 mat4 spriteModelMatrix;
 mat4 spriteMVPMatrix;
 Texture2D spriteTexture;
 Font dejavuFont;
+Text fpsText;
 
 ShaderProgram transformShader;
+ShaderProgram colorizeShader;
+
 CameraMatrices cameraMatrices;
 OthroCameraTransform cameraTransform = OthroCameraTransform(
     vec2(1024, 768),
@@ -84,37 +83,32 @@ void onCreate() {
     createShaders();
     createTexture();
     createFont();
+    createGlyphGeometry();
+    createFpsText();
 }
 
 void createSprite() {
-    sprite.indices.insert([0, 3, 1, 2]);
-    sprite.vertices.insert(
-        [
-            vec2(-0.5f, -0.5f),
-            vec2( 0.5f, -0.5f),
-            vec2( 0.5f,  0.5f),
-            vec2(-0.5f,  0.5f)
-        ]
-    );
-
-    sprite.texCoords.insert(
-        [
-            vec2(0.0f, 1.0f),
-            vec2(1.0f, 1.0f),
-            vec2(1.0f, 0.0f),
-            vec2(0.0f, 0.0f),
-        ]
-    );
-
-    sprite.indicesBuffer = createIndicesBuffer(sprite.indices);
-    sprite.verticesBuffer = createVector2fBuffer(sprite.vertices);
-    sprite.texCoordsBuffer = createVector2fBuffer(sprite.texCoords);
+    sprite.indicesBuffer = createIndicesBuffer(quadIndices);
+    sprite.verticesBuffer = createVector2fBuffer(centeredQuadVertices);
+    sprite.texCoordsBuffer = createVector2fBuffer(quadTexCoords);
 
     sprite.vao = createVAO();
 
     bindVAO(sprite.vao);
-    createVector2fVAO(sprite.verticesBuffer, VaoAttrLocation.in_Position);
-    createVector2fVAO(sprite.texCoordsBuffer, VaoAttrLocation.in_TextCoords);
+    createVector2fVAO(sprite.verticesBuffer, inAttrPosition);
+    createVector2fVAO(sprite.texCoordsBuffer, inAttrTextCoords);
+}
+
+void createGlyphGeometry() {
+    glyphGeometry.indicesBuffer = createIndicesBuffer(quadIndices);
+    glyphGeometry.verticesBuffer = createVector2fBuffer(quadVertices);
+    glyphGeometry.texCoordsBuffer = createVector2fBuffer(quadTexCoords);
+
+    glyphGeometry.vao = createVAO();
+
+    bindVAO(glyphGeometry.vao);
+    createVector2fVAO(glyphGeometry.verticesBuffer, inAttrPosition);
+    createVector2fVAO(glyphGeometry.texCoordsBuffer, inAttrTextCoords);
 }
 
 void createShaders() {
@@ -124,7 +118,11 @@ void createShaders() {
     const fragmentSource = readText(buildPath("res", "texture_fragment.glsl"));
     const fragmentShader = createShader("transform fragment shader", ShaderType.fragment, fragmentSource);
 
+    const fragmentColorSource = readText(buildPath("res", "color_fragment.glsl"));
+    const fragmentColorShader = createShader("color fragment shader", ShaderType.fragment, fragmentColorSource);
+
     transformShader = createShaderProgram("transform program", [vertexShader, fragmentShader]);
+    colorizeShader = createShaderProgram("color program", [vertexShader, fragmentColorShader]);
 }
 
 void createTexture() {
@@ -137,12 +135,10 @@ void createTexture() {
 
 void createFont() {
     dejavuFont = createFontFromFile(buildPath("res", "DejaVuSans.ttf"));
+}
 
-    const Texture2DParameters params = {
-        minFilter: true,
-        magFilter: true
-    };
-    getFontGlyphsTexture(dejavuFont, 12, params);
+void createFpsText() {
+    fpsText = createText();
 }
 
 void onDestroy() {
@@ -150,8 +146,10 @@ void onDestroy() {
     deleteBuffer(sprite.verticesBuffer);
     deleteBuffer(sprite.texCoordsBuffer);
     deleteShaderProgram(transformShader);
+    deleteShaderProgram(colorizeShader);
     deleteTexture2D(spriteTexture);
     deleteFont(dejavuFont);
+    deleteText(fpsText);
 }
 
 void onResize(in uint width, in uint height) {
@@ -176,13 +174,30 @@ void onProgress() {
 }
 
 void onRender() {
+    renderSprite();
+    renderFpsText();
+}
+
+void renderSprite() {
     bindShaderProgram(transformShader);
     setShaderProgramUniformMatrix(transformShader, "MVP", spriteMVPMatrix);
     setShaderProgramUniformTexture(transformShader, "texture", spriteTexture, 0);
 
     bindVAO(sprite.vao);
     bindIndices(sprite.indicesBuffer);
-    renderIndexedGeometry(cast(uint) sprite.indices.length, GL_TRIANGLE_STRIP);
+    renderIndexedGeometry(cast(uint) quadIndices.length, GL_TRIANGLE_STRIP);
+}
+
+void renderFpsText() {
+    bindShaderProgram(colorizeShader);
+    setShaderProgramUniformVec4f(colorizeShader, "color", vec4(0, 0, 0, 1.0f));
+
+    const TextParams textParams = {
+        textSize: 32,
+        font: dejavuFont,
+        text: "Hello world!"
+    };
+    renderText(fpsText, textParams, colorizeShader, glyphGeometry, glyphTransform, cameraMatrices.mvpMatrix);
 }
 
 void mainLoop() {

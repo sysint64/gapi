@@ -7,6 +7,11 @@ import std.format;
 
 import gapi.opengl;
 
+immutable inAttrPosition = 0;
+immutable inAttrTextCoords = 1;
+immutable inAttrColors = 2;
+immutable inAttrNormals = 3;
+
 struct ShaderProgram {
     GLuint id;
     Shader[] shaders;

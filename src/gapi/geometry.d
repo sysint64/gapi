@@ -19,12 +19,24 @@ Buffer createIndicesBuffer(in Array!uint indicesData, in bool staticData = true)
     return createBuffer!GLuint(&indicesData[0], indicesData.length, 1, staticData);
 }
 
+Buffer createIndicesBuffer(immutable(uint[]) indicesData) {
+    return createBuffer!GLuint(&indicesData[0], indicesData.length, 1, true);
+}
+
 Buffer createVector2fBuffer(in Array!vec2 verticesData, in bool staticData = true) {
     return createBuffer!GLfloat(&verticesData[0], verticesData.length, 2, staticData);
 }
 
+Buffer createVector2fBuffer(immutable(vec2[]) verticesData) {
+    return createBuffer!GLfloat(&verticesData[0], verticesData.length, 2, true);
+}
+
 Buffer createVector3fBuffer(in Array!vec3 verticesData, in bool staticData = true) {
     return createBuffer!GLfloat(&verticesData[0], verticesData.length, 3, staticData);
+}
+
+Buffer createVector3fBuffer(immutable(vec3[]) verticesData) {
+    return createBuffer!GLfloat(&verticesData[0], verticesData.length, 3, true);
 }
 
 Buffer createBuffer(T)(in void* verticesData, in size_t dataLength, in uint dimension,
