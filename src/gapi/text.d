@@ -4,8 +4,6 @@ import std.conv;
 import std.string;
 import std.container.array;
 
-import derelict.sfml2.graphics;
-
 import gapi.opengl;
 import gapi.geometry;
 import gapi.geometry_quad;
@@ -31,17 +29,14 @@ struct GlyphGeometry {
 }
 
 struct Text {
-    private const(sfText)* sf_text;
 }
 
 Text createText() {
     Text text;
-    text.sf_text = sfText_create();
     return text;
 }
 
 void deleteText(in Text text) {
-    sfText_destroy(cast(sfText*) text.sf_text);
 }
 
 struct UpdateTextInput {
@@ -63,57 +58,58 @@ struct Glyph {
 }
 
 UpdateTextResult updateText(in Text text, in UpdateTextInput input) {
-    auto sf_text = cast(sfText*) text.sf_text;
-    auto sf_font = cast(sfFont*) input.font.sf_font;
+    // auto sf_text = cast(sfText*) text.sf_text;
+    // auto sf_font = cast(sfFont*) input.font.sf_font;
 
-    sfText_setFont(sf_text, input.font.sf_font);
-    sfText_setCharacterSize(sf_text, input.textSize);
+    // sfText_setFont(sf_text, input.font.sf_font);
+    // sfText_setCharacterSize(sf_text, input.textSize);
 
-    string text_s = to!string(input.text);
-    const char* text_z = toStringz(text_s);
+    // string text_s = to!string(input.text);
+    // const char* text_z = toStringz(text_s);
 
-    sfText_setString(sf_text, text_z);
+    // sfText_setString(sf_text, text_z);
 
-    vec2 glyphPosition = input.position;
-    uint prevChar = 0;
+    // vec2 glyphPosition = input.position;
+    // uint prevChar = 0;
 
-    Array!Glyph glyphs;
-    const texture = getFontGlyphsTexture(input.font, input.textSize);
+    // Array!Glyph glyphs;
+    // const texture = getFontGlyphsTexture(input.font, input.textSize);
 
-    for (size_t i = 0; i < input.text.length; ++i) {
-        const curChar = input.text[i];
-        const sf_glyph = sfFont_getGlyph(sf_font, curChar, input.textSize, 0, 0);
-        const offset = getCharOffset(sf_font, input.textSize, prevChar, curChar, sf_glyph);
+    // for (size_t i = 0; i < input.text.length; ++i) {
+    //     const curChar = input.text[i];
+    //     const sf_glyph = sfFont_getGlyph(sf_font, curChar, input.textSize, 0, 0);
+    //     const offset = getCharOffset(sf_font, input.textSize, prevChar, curChar, sf_glyph);
 
-        glyphPosition.x += offset.x;
-        glyphPosition.y = input.position.y + offset.y;
+    //     glyphPosition.x += offset.x;
+    //     glyphPosition.y = input.position.y + offset.y;
 
-        prevChar = curChar;
+    //     prevChar = curChar;
 
-        const Transform2D glyphTransform = {
-            position: glyphPosition,
-            scaling: vec2(sf_glyph.bounds.width, sf_glyph.bounds.height)
-        };
-        const mvpMatrix = input.cameraMvpMatrix * create2DModelMatrix(glyphTransform);
-        glyphPosition.x += sf_glyph.advance;
+    //     const Transform2D glyphTransform = {
+    //         position: glyphPosition,
+    //         scaling: vec2(sf_glyph.bounds.width, sf_glyph.bounds.height)
+    //     };
+    //     const mvpMatrix = input.cameraMvpMatrix * create2DModelMatrix(glyphTransform);
+    //     glyphPosition.x += sf_glyph.advance;
 
-        Texture2DCoords glyphTexCoords;
+    //     Texture2DCoords glyphTexCoords;
 
-        glyphTexCoords.offset = vec2(sf_glyph.textureRect.left, sf_glyph.textureRect.top);
-        glyphTexCoords.size = vec2(sf_glyph.textureRect.width, sf_glyph.textureRect.height);
+    //     glyphTexCoords.offset = vec2(sf_glyph.textureRect.left, sf_glyph.textureRect.top);
+    //     glyphTexCoords.size = vec2(sf_glyph.textureRect.width, sf_glyph.textureRect.height);
 
-        const Glyph glyph = {
-            mvpMatrix: mvpMatrix,
-            texCoords: normilizeTexture2DCoords(glyphTexCoords, texture)
-        };
+    //     const Glyph glyph = {
+    //         mvpMatrix: mvpMatrix,
+    //         texCoords: normilizeTexture2DCoords(glyphTexCoords, texture)
+    //     };
 
-        glyphs.insert(glyph);
-    }
+    //     glyphs.insert(glyph);
+    // }
 
-    return UpdateTextResult(
-        glyphs,
-        texture
-    );
+    // return UpdateTextResult(
+    //     glyphs,
+    //     texture
+    // );
+    return UpdateTextResult();
 }
 
 struct RenderTextInput {
@@ -139,16 +135,16 @@ void renderText(in RenderTextInput input) {
     }
 }
 
-private vec2 getCharOffset(sfFont* sf_font, in uint textSize, in dchar prevChar,
-                           in dchar curChar, in sfGlyph glyph)
-{
-    const kerning = sfFont_getKerning(sf_font, prevChar, curChar, textSize);
+// private vec2 getCharOffset(sfFont* sf_font, in uint textSize, in dchar prevChar,
+//                            in dchar curChar, in sfGlyph glyph)
+// {
+//     const kerning = sfFont_getKerning(sf_font, prevChar, curChar, textSize);
 
-    vec2 glyphOffset;
+//     vec2 glyphOffset;
 
-    glyphOffset.x = kerning;
-    glyphOffset.x += glyph.bounds.left;
-    glyphOffset.y = -glyph.bounds.top - glyph.bounds.height;
+//     glyphOffset.x = kerning;
+//     glyphOffset.x += glyph.bounds.left;
+//     glyphOffset.y = -glyph.bounds.top - glyph.bounds.height;
 
-    return glyphOffset;
-}
+//     return glyphOffset;
+// }
