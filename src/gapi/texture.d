@@ -1,5 +1,6 @@
 module gapi.texture;
 
+import std.stdio;
 import std.string;
 import std.conv;
 
@@ -9,11 +10,10 @@ import derelict.sdl2.image;
 import derelict.sdl2.sdl;
 
 struct Texture2D {
-    GLuint id;
+    GLuint id = 0;
     uint width;
     uint height;
     Texture2DParameters params;
-    private SDL_Surface* surface;
 }
 
 struct Texture2DParameters {
@@ -39,20 +39,27 @@ Texture2DCoords normilizeTexture2DCoords(in Texture2DCoords coords, in Texture2D
 Texture2D createTexture2DFromFile(in string fileName,
                                   in Texture2DParameters params = Texture2DParameters())
 {
+    const char* fileNamez = toStringz(fileName);
+    auto surface = IMG_Load(fileNamez);
+    scope(exit) SDL_FreeSurface(surface);
+
+    if (!surface)
+        throw new Error("Unable create image from file: " ~ to!string(IMG_GetError()));
+
+    return createTexture2DFromSurface(surface, params);
+}
+
+package Texture2D createTexture2DFromSurface(SDL_Surface* surface,
+                                             in Texture2DParameters params = Texture2DParameters())
+{
     Texture2D texture;
     glGenTextures(1, &texture.id);
     glBindTexture(GL_TEXTURE_2D, texture.id);
 
-    const char* fileNamez = toStringz(fileName);
-    texture.surface = IMG_Load(fileNamez);
+    texture.width = surface.w;
+    texture.height = surface.h;
 
-    if (!texture.surface)
-        throw new Error("Unable create image from file: " ~ to!string(IMG_GetError()));
-
-    texture.width = texture.surface.w;
-    texture.height = texture.surface.h;
-
-    const format = texture.surface.format.BytesPerPixel == 4 ? GL_RGBA : GL_RGB;
+    const format = surface.format.BytesPerPixel == 4 ? GL_RGBA : GL_RGB;
     glTexImage2D(
         /* target */ GL_TEXTURE_2D,
         /* level */ 0,
@@ -62,14 +69,38 @@ Texture2D createTexture2DFromFile(in string fileName,
         /* border */ 0,
         /* format */ format,
         /* type */ GL_UNSIGNED_BYTE,
-        /* data */ texture.surface.pixels
+        /* data */ surface.pixels
     );
 
     return updateTexture2D(texture, params);
 }
 
+package Texture2D updateTexture2DFromSurface(Texture2D texture, SDL_Surface* surface) {
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+
+    texture.width = surface.w;
+    texture.height = surface.h;
+
+    const format = surface.format.BytesPerPixel == 4 ? GL_RGBA : GL_RGB;
+    glTexImage2D(
+        /* target */ GL_TEXTURE_2D,
+        /* level */ 0,
+        /* internalformat */ format,
+        /* width */ texture.width,
+        /* height */ texture.height,
+        /* border */ 0,
+        /* format */ format,
+        /* type */ GL_UNSIGNED_BYTE,
+        /* data */ surface.pixels
+    );
+
+    return texture;
+}
+
 void deleteTexture2D(in Texture2D texture) {
-    glDeleteTextures(1, &texture.id);
+    if (texture.id != 0) {
+        glDeleteTextures(1, &texture.id);
+    }
 }
 
 void bindTexture2D(in Texture2D texture) {
