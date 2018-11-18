@@ -5,7 +5,6 @@
 	"Andrey Kabylin"
     ],
     "versions": [
-        "SFMLFont",
         "DerelictGL3_CustomFreeFuncs"
     ],
     "dependencies": {
