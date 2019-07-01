@@ -19,24 +19,24 @@ Buffer createIndicesBuffer(in Array!uint indicesData, in bool staticData = true)
     return createBuffer!GLuint(&indicesData[0], indicesData.length, 1, staticData);
 }
 
-Buffer createIndicesBuffer(immutable(uint[]) indicesData) {
-    return createBuffer!GLuint(&indicesData[0], indicesData.length, 1, true);
+Buffer createIndicesBuffer(immutable(uint[]) indicesData, in bool staticData = true) {
+    return createBuffer!GLuint(&indicesData[0], indicesData.length, 1, staticData);
 }
 
 Buffer createVector2fBuffer(in Array!vec2 verticesData, in bool staticData = true) {
     return createBuffer!GLfloat(&verticesData[0], verticesData.length, 2, staticData);
 }
 
-Buffer createVector2fBuffer(immutable(vec2[]) verticesData) {
-    return createBuffer!GLfloat(&verticesData[0], verticesData.length, 2, true);
+Buffer createVector2fBuffer(immutable(vec2[]) verticesData, in bool staticData = true) {
+    return createBuffer!GLfloat(&verticesData[0], verticesData.length, 2, staticData);
 }
 
 Buffer createVector3fBuffer(in Array!vec3 verticesData, in bool staticData = true) {
     return createBuffer!GLfloat(&verticesData[0], verticesData.length, 3, staticData);
 }
 
-Buffer createVector3fBuffer(immutable(vec3[]) verticesData) {
-    return createBuffer!GLfloat(&verticesData[0], verticesData.length, 3, true);
+Buffer createVector3fBuffer(immutable(vec3[]) verticesData, in bool staticData = true) {
+    return createBuffer!GLfloat(&verticesData[0], verticesData.length, 3, staticData);
 }
 
 Buffer createBuffer(T)(in void* verticesData, in size_t dataLength, in uint dimension,
@@ -58,6 +58,39 @@ Buffer createBuffer(T)(in void* verticesData, in size_t dataLength, in uint dime
     }
 
     return vertices;
+}
+
+void updateIndicesBufferData(ref Buffer buffer, in Array!uint indicesData) {
+    updateBufferData!GLuint(buffer, &indicesData[0], indicesData.length, 1);
+}
+
+void updateIndicesBufferData(ref Buffer buffer, immutable(uint[]) indicesData) {
+    updateBufferData!GLuint(buffer, &indicesData[0], indicesData.length, 1);
+}
+
+void updateVector2fBufferData(ref Buffer buffer, in Array!vec2 verticesData) {
+    updateBufferData!GLfloat(buffer, &verticesData[0], verticesData.length, 2);
+}
+
+void updateVector2fBufferData(ref Buffer buffer, immutable(vec2[]) verticesData) {
+    updateBufferData!GLfloat(buffer, &verticesData[0], verticesData.length, 2);
+}
+
+void updateVector3fBufferData(ref Buffer buffer, in Array!vec3 verticesData) {
+    updateBufferData!GLfloat(buffer, &verticesData[0], verticesData.length, 3);
+}
+
+void updateVector3fBufferData(ref Buffer buffer, immutable(vec3[]) verticesData) {
+    updateBufferData!GLfloat(buffer, &verticesData[0], verticesData.length, 3);
+}
+
+void updateBufferData(T)(ref Buffer buffer, in void* bufferData, in size_t dataLength,
+                         in uint dimension)
+{
+    const int dataSize = to!int(T.sizeof*dimension*dataLength);
+
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.id);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, dataSize, bufferData);
 }
 
 VAO createVAO() {

@@ -43,8 +43,9 @@ Texture2D createTexture2DFromFile(in string fileName,
     auto surface = IMG_Load(fileNamez);
     scope(exit) SDL_FreeSurface(surface);
 
-    if (!surface)
+    if (!surface) {
         throw new Error("Unable create image from file: " ~ to!string(IMG_GetError()));
+    }
 
     return createTexture2DFromSurface(surface, params);
 }

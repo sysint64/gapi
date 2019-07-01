@@ -23,16 +23,8 @@ struct TextParams {
     dstring text;
 }
 
-struct GlyphGeometry {
-    Buffer indicesBuffer;
-    Buffer verticesBuffer;
-    Buffer texCoordsBuffer;
-
-    VAO vao;
-}
-
 struct Text {
-    private Texture2D texture;
+    Texture2D texture;
 }
 
 Text createText() {
@@ -53,11 +45,18 @@ struct UpdateTextInput {
 }
 
 struct UpdateTextureTextResult {
-    mat4 mvpMatrix;
     Texture2D texture;
+    vec2 surfaceSize;
 }
 
 UpdateTextureTextResult updateTextureText(Text* text, UpdateTextInput input) {
+    if (input.text.length == 0) {
+        return UpdateTextureTextResult(
+            text.texture,
+            vec2(0, 0)
+        );
+    }
+
     const white = SDL_Color(0, 0, 0);
 
     auto copy = new ushort[input.text.length + 1];
@@ -88,31 +87,33 @@ UpdateTextureTextResult updateTextureText(Text* text, UpdateTextInput input) {
         updateTexture2DFromSurface(text.texture, surface);
     }
 
-    const Transform2D textTransform = {
-        position: input.position,
-        scaling: vec2(surface.w, surface.h)
-    };
-
-    const mvpMatrix = input.cameraMvpMatrix * create2DModelMatrix(textTransform);
-
     return UpdateTextureTextResult(
-        mvpMatrix,
-        text.texture
+        text.texture,
+        vec2(surface.w, surface.h)
     );
 }
 
-struct RenderTextureTextInput {
-    ShaderProgram shader;
-    GlyphGeometry geometry;
-    UpdateTextureTextResult updateResult;
-}
+vec2 getTextBounds(Text* text, UpdateTextInput input) {
+    int width;
+    int height;
 
-void renderTextureText(in RenderTextureTextInput input) {
-    bindVAO(input.geometry.vao);
-    bindIndices(input.geometry.indicesBuffer);
+    auto copy = new ushort[input.text.length + 1];
 
-    setShaderProgramUniformTexture(input.shader, "texture", input.updateResult.texture, 0);
-    setShaderProgramUniformMatrix(input.shader, "MVP", input.updateResult.mvpMatrix);
+    for (size_t i = 0; i < input.text.length; ++i) {
+        copy[i] = cast(ushort) input.text[i];
+    }
 
-    renderIndexedGeometry(cast(uint) quadIndices.length, GL_TRIANGLE_STRIP);
+    copy[input.text.length] = 0;
+
+    auto font = getTTF_Font(input.font, input.textSize);
+
+    const white = SDL_Color(0, 0, 0);
+    SDL_Surface* surface = TTF_RenderUNICODE_Blended(font, copy.ptr, white);
+
+    // if (!TTF_SizeUNICODE(font, copy.ptr, &width, &height)) {
+    if (!surface)
+        throw new Error("Unable to get text size: " ~ to!string(TTF_GetError()));
+    // }
+
+    return vec2(surface.w, surface.h);
 }

@@ -15,3 +15,8 @@ mat4 create2DModelMatrix(in Transform2D transform) {
 
     return translateMatrix * rotateMatrix * scaleMatrix;
 }
+
+mat4 create2DModelMatrixPosition(in vec2 position) {
+    const translateMatrix = mat4.translation(vec3(position, 0.0f));
+    return translateMatrix;
+}
