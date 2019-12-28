@@ -62,13 +62,16 @@ ShaderProgram createShaderProgram(in string name, Shader[] shaders) {
     glLinkProgram(program.id);
     checkProgramStatus(program, GL_LINK_STATUS);
 
-    glValidateProgram(program.id);
-    checkProgramStatus(program, GL_VALIDATE_STATUS);
-
     return program;
 }
 
+void validateShaderProgram(in ShaderProgram program) {
+    glValidateProgram(program.id);
+    checkProgramStatus(program, GL_VALIDATE_STATUS);
+}
+
 void bindShaderProgram(in ShaderProgram program) {
+    debug validateShaderProgram(program);
     glUseProgram(program.id);
 }
 
