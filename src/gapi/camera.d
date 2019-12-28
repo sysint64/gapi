@@ -12,7 +12,8 @@ struct CameraMatrices {
 struct OthroCameraTransform {
     vec2 viewportSize;
     vec2 position;
-    float zoom;
+    float scaleX;
+    float scaleY;
 }
 
 CameraMatrices createOrthoCameraMatrices(in OthroCameraTransform transform) {
@@ -29,8 +30,8 @@ CameraMatrices createOrthoCameraMatrices(in OthroCameraTransform transform) {
         0.0f, 10.0f
     );
 
-    if (transform.zoom > 1.0f) {
-        cameraMatrices.modelMatrix = mat4.scaling(transform.zoom, transform.zoom, 1.0f);
+    if (transform.scaleX > 1.0f || transform.scaleY > 1.0f) {
+        cameraMatrices.modelMatrix = mat4.scaling(transform.scaleX, transform.scaleY, 1.0f);
     } else {
         cameraMatrices.modelMatrix = mat4.identity;
     }
