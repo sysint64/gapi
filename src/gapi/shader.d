@@ -71,7 +71,7 @@ void validateShaderProgram(in ShaderProgram program) {
 }
 
 void bindShaderProgram(in ShaderProgram program) {
-    debug validateShaderProgram(program);
+    validateShaderProgram(program);
     glUseProgram(program.id);
 }
 
@@ -136,7 +136,7 @@ GLint checkShaderStatus(Shader shader, GLenum pname) {
     return status;
 }
 
-GLint checkProgramStatus(ShaderProgram program, GLenum pname) {
+GLint checkProgramStatus(in ShaderProgram program, GLenum pname) {
     GLint status, length;
     GLchar[1024] buffer;
 
